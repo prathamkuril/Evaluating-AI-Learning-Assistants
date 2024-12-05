@@ -21,6 +21,7 @@ from typing import List, Dict, Any
 import numpy as np
 from numpy.linalg import norm
 import datetime
+import csv  # Add this import at the top of the file
 
 
 # Third-Party Packages
@@ -437,15 +438,27 @@ def save_results(test_destination_dir: str, question_results: List[TestResult], 
 
     # Generate a unique filename for the output based on the current timestamp and test mode.
     current_datetime = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    output_file = os.path.join(test_destination_dir, f"test_output_v5_{test_mode}_{current_datetime}.json")
+    output_file = os.path.join(test_destination_dir, f"test_output_v5_{test_mode}_{current_datetime}.csv")
 
     try:
-        # Write the output data to the specified file as JSON.
-        with open(output_file, "w", encoding="utf-8") as f:
-            json.dump(output_data, f, indent=4)
+        with open(output_file, "w", encoding="utf-8", newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=[
+                "question", "enriched_question", "hit", "summary",
+                "hitRelevance", "follow_up", "follow_up_on_topic", "gemini_evaluation"
+            ])
+            writer.writeheader()
+            for result in question_results:
+                writer.writerow({
+                    "question": result.question,
+                    "enriched_question": result.enriched_question_summary,
+                    "hit": result.hit,
+                    "summary": result.hit_summary,
+                    "hitRelevance": result.hit_relevance,
+                    "follow_up": result.follow_up,
+                    "follow_up_on_topic": result.follow_up_on_topic,
+                    "gemini_evaluation": result.gemini_evaluation
+                })
         logger.info(f"Test results saved to: {output_file}")
-    
-    # Handle any I/O errors that might occur during writing.
     except IOError as e:
         logger.error(f"Error saving results: {e}")
         raise
