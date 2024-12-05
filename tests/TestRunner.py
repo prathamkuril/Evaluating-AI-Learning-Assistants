@@ -67,6 +67,12 @@ def TestRunner():
     print("4. Business Analyst Persona")
     choice = input("Enter your choice: ")
 
+    # Provide the user with options to choose the LLM for persona generation
+    print("Choose an LLM for persona generation:")
+    print("1. GPT-4o")
+    print("2. Gemini-1.5-pro")
+    llm_choice = input("Enter your choice: ")
+
     # Run tests based on the user's choice
     if choice == '1':
         questions = [
@@ -175,17 +181,17 @@ def TestRunner():
     elif choice == '2':
         # Developer persona-based testing
         strategy = DeveloperPersonaStrategy()
-        run_tests(config, test_destination_dir, source_dir, persona_strategy=strategy)
+        run_tests(config, test_destination_dir, source_dir, persona_strategy=strategy, llm_choice=llm_choice)
 
     elif choice == '3':
         # Tester persona-based testing
         strategy = TesterPersonaStrategy()
-        run_tests(config, test_destination_dir, source_dir, persona_strategy=strategy)
+        run_tests(config, test_destination_dir, source_dir, persona_strategy=strategy, llm_choice=llm_choice)
 
     elif choice == '4':
         # Business analyst persona-based testing
         strategy = BusinessAnalystPersonaStrategy()
-        run_tests(config, test_destination_dir, source_dir, persona_strategy=strategy)
+        run_tests(config, test_destination_dir, source_dir, persona_strategy=strategy, llm_choice=llm_choice)
 
     else:
         # Handle invalid input
