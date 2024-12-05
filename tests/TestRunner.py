@@ -47,8 +47,8 @@ def TestRunner():
     embedding_client = configure_openai_for_azure(config, "embedding")
 
     # Define the directories for test output and data sources
-    test_destination_dir = "D:/Braid Technologies/BraidTechnologiesRepo/WorkedExamples/BoxerTest/test output/"
-    source_dir = "D:/Braid Technologies/BraidTechnologiesRepo/WorkedExamples/BoxerTest/data/"
+    test_destination_dir = "D:/Dissertation - City, Univeristy of London/Evaluating-AI-Learning-Assistants/test output"
+    source_dir = "D:\Dissertation - City, Univeristy of London\Evaluating-AI-Learning-Assistants\data"
 
     try:
         # Ensure the test output directory exists, create if it doesn't
