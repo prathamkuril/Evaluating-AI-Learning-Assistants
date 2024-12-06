@@ -5,8 +5,6 @@ import os
 import sys
 
 # Set up logging to display information about the execution of the script
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 # Get the current directory (tests folder)
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -20,26 +18,37 @@ from BoxerDataTest_v5 import run_tests, call_openai_chat, configure_openai_for_a
 from common.ApiConfiguration import ApiConfiguration
 from PersonaStrategy import DeveloperPersonaStrategy, TesterPersonaStrategy, BusinessAnalystPersonaStrategy
 from openai import AzureOpenAI, OpenAIError, BadRequestError, APIConnectionError
-from GeminiEvaluator import GeminiEvaluator
-from GPT4oEvaluator import GPT4oEvaluator
+
+# Setup Logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def TestRunner():
     """
     Runs tests using the provided configuration, test destination directory, source directory, and questions.
-    This script provides a command-line interface to run tests using the BoxerDataTest_v5 module.
+
+    This script provides a command-line interface to run tests using the BoxerDataTest_v2 module.
     Depending on the user's choice, it can run static question tests or persona-based tests.
+
+    Parameters:
+        None
+
+    Returns:
+        None
     """
+    
     # Initialize the API configuration
     config = ApiConfiguration()
 
     # For running chat completions tests
     chat_client = configure_openai_for_azure(config, "chat")
+    
     # For running embeddings tests
     embedding_client = configure_openai_for_azure(config, "embedding")
 
     # Define the directories for test output and data sources
     test_destination_dir = "D:/Dissertation - City, Univeristy of London/Evaluating-AI-Learning-Assistants/test output"
-    source_dir = "D:/Dissertation - City, Univeristy of London/Evaluating-AI-Learning-Assistants/data"
+    source_dir = "D:\Dissertation - City, Univeristy of London\Evaluating-AI-Learning-Assistants\data"
 
     try:
         # Ensure the test output directory exists, create if it doesn't
@@ -57,16 +66,6 @@ def TestRunner():
     print("3. Tester Persona")
     print("4. Business Analyst Persona")
     choice = input("Enter your choice: ")
-
-    # Provide the user with options to choose the LLM for persona generation
-    print("Choose an LLM for persona generation:")
-    print("1. GPT-4o")
-    print("2. Gemini-1.5-pro")
-    llm_choice = input("Enter your choice: ")
-
-    # Initialize evaluators
-    gemini_evaluator = GeminiEvaluator()
-    gpt4o_evaluator = GPT4oEvaluator(config)
 
     # Run tests based on the user's choice
     if choice == '1':
@@ -171,28 +170,34 @@ def TestRunner():
             # 'How can I track and fix inaccuracies in LLM responses?',
             'What are the best practices for managing API keys and authentication?'
         ]
-        run_tests(config, test_destination_dir, source_dir, questions=questions, llm_choice=llm_choice)
+        run_tests(config, test_destination_dir, source_dir, questions=questions)
+        
     elif choice == '2':
         # Developer persona-based testing
         strategy = DeveloperPersonaStrategy()
-        run_tests(config, test_destination_dir, source_dir, persona_strategy=strategy, llm_choice=llm_choice)
+        run_tests(config, test_destination_dir, source_dir, persona_strategy=strategy)
+
     elif choice == '3':
         # Tester persona-based testing
         strategy = TesterPersonaStrategy()
-        run_tests(config, test_destination_dir, source_dir, persona_strategy=strategy, llm_choice=llm_choice)
+        run_tests(config, test_destination_dir, source_dir, persona_strategy=strategy)
+
     elif choice == '4':
         # Business analyst persona-based testing
         strategy = BusinessAnalystPersonaStrategy()
-        run_tests(config, test_destination_dir, source_dir, persona_strategy=strategy, llm_choice=llm_choice)
+        run_tests(config, test_destination_dir, source_dir, persona_strategy=strategy)
+
     else:
         # Handle invalid input
         print("Invalid choice. Exiting.")
         return
 
+
 if __name__ == "__main__":
     # Run the TestRunner function if the script is executed as the main program
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
+
     try:
         TestRunner()
     except Exception as e:
