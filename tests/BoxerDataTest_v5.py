@@ -28,6 +28,8 @@ import csv  # Add this import at the top of the file
 from openai import AzureOpenAI, OpenAIError, BadRequestError, APIConnectionError
 from tenacity import retry, wait_random_exponential, stop_after_attempt, retry_if_not_exception_type
 from GeminiEvaluator import GeminiEvaluator
+from GPT4oEvaluator import GPT4oEvaluator
+
 
 # Add the project root and scripts directory to the Python path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -37,6 +39,7 @@ sys.path.insert(0, parent_dir)
 # Local Modules
 from common.ApiConfiguration import ApiConfiguration
 from common.common_functions import get_embedding
+from common.common_functions import call_openai_chat
 from PersonaStrategy import DeveloperPersonaStrategy, TesterPersonaStrategy, BusinessAnalystPersonaStrategy, PersonaStrategy
 
 # Constants
@@ -105,52 +108,53 @@ class TestResult:
         self.follow_up: str = ""                            # Adding followUp field
         self.follow_up_on_topic: str = ""                   # Adding followUpOnTopic field
         self.gemini_evaluation: str = ""                    # Field to store Gemini LLM evaluation
+        self.gpt4o_evaluation: str = ""                     # Field to store GPT-4o evaluation
 
-# Function to call the OpenAI API with retry logic
-@retry(wait=wait_random_exponential(min=5, max=15), stop=stop_after_attempt(MAX_RETRIES), retry=retry_if_not_exception_type(BadRequestError))
-def call_openai_chat(chat_client: AzureOpenAI, messages: List[Dict[str, str]], config: ApiConfiguration, logger: logging.Logger) -> str:
-    """
-    Retries the OpenAI chat API call with exponential backoff and retry logic.
+# # Function to call the OpenAI API with retry logic
+# @retry(wait=wait_random_exponential(min=5, max=15), stop=stop_after_attempt(MAX_RETRIES), retry=retry_if_not_exception_type(BadRequestError))
+# def call_openai_chat(chat_client: AzureOpenAI, messages: List[Dict[str, str]], config: ApiConfiguration, logger: logging.Logger) -> str:
+#     """
+#     Retries the OpenAI chat API call with exponential backoff and retry logic.
 
-    :param chat_client: An instance of the AzureOpenAI class.
-    :type chat_client: AzureOpenAI
-    :param messages: A list of dictionaries representing the messages to be sent to the API.
-    :type messages: List[Dict[str, str]]
-    :param config: An instance of the ApiConfiguration class.
-    :type config: ApiConfiguration
-    :param logger: An instance of the logging.Logger class.
-    :type logger: logging.Logger
-    :return: The content of the first choice in the API response.
-    :rtype: str
-    :raises RuntimeError: If the finish reason in the API response is not 'stop', 'length', or an empty string.
-    :raises OpenAIError: If there is an error with the OpenAI API.
-    :raises APIConnectionError: If there is an error with the API connection.
-    """
-    try:
-        response = chat_client.chat.completions.create(
-            model=config.azureDeploymentName,
-            messages=messages,
-            temperature=0.7,
-            max_tokens=config.maxTokens,
-            top_p=0.0,
-            frequency_penalty=0,
-            presence_penalty=0,
-            timeout=config.openAiRequestTimeout,
-        )
-        content = response.choices[0].message.content
-        finish_reason = response.choices[0].finish_reason
+#     :param chat_client: An instance of the AzureOpenAI class.
+#     :type chat_client: AzureOpenAI
+#     :param messages: A list of dictionaries representing the messages to be sent to the API.
+#     :type messages: List[Dict[str, str]]
+#     :param config: An instance of the ApiConfiguration class.
+#     :type config: ApiConfiguration
+#     :param logger: An instance of the logging.Logger class.
+#     :type logger: logging.Logger
+#     :return: The content of the first choice in the API response.
+#     :rtype: str
+#     :raises RuntimeError: If the finish reason in the API response is not 'stop', 'length', or an empty string.
+#     :raises OpenAIError: If there is an error with the OpenAI API.
+#     :raises APIConnectionError: If there is an error with the API connection.
+#     """
+#     try:
+#         response = chat_client.chat.completions.create(
+#             model=config.azureDeploymentName,
+#             messages=messages,
+#             temperature=0.7,
+#             max_tokens=config.maxTokens,
+#             top_p=0.0,
+#             frequency_penalty=0,
+#             presence_penalty=0,
+#             timeout=config.openAiRequestTimeout,
+#         )
+#         content = response.choices[0].message.content
+#         finish_reason = response.choices[0].finish_reason
 
-        if finish_reason not in {"stop", "length", ""}:
-            logger.warning("Unexpected stop reason: %s", finish_reason)
-            logger.warning("Content: %s", content)
-            logger.warning("Consider increasing max tokens and retrying.")
-            raise RuntimeError("Unexpected finish reason in API response.")
+#         if finish_reason not in {"stop", "length", ""}:
+#             logger.warning("Unexpected stop reason: %s", finish_reason)
+#             logger.warning("Content: %s", content)
+#             logger.warning("Consider increasing max tokens and retrying.")
+#             raise RuntimeError("Unexpected finish reason in API response.")
 
-        return content
+#         return content
 
-    except (OpenAIError, APIConnectionError) as e:
-        logger.error(f"Error: {e}")
-        raise
+#     except (OpenAIError, APIConnectionError) as e:
+#         logger.error(f"Error: {e}")
+#         raise
 
 
 # Function to retrieve text embeddings using OpenAI API with retry logic
@@ -290,88 +294,53 @@ def assess_follow_up_on_topic(chat_client: AzureOpenAI, config: ApiConfiguration
     return response
 
 def process_questions(chat_client: AzureOpenAI, embedding_client: AzureOpenAI, config: ApiConfiguration, questions: List[str], processed_question_chunks: List[Dict[str, Any]], logger: logging.Logger, llm_choice: str = '1') -> List[TestResult]:
-    """
-    Processes a list of test questions and evaluates their relevance based on their similarity to pre-processed question chunks.
-
-    Args:
-        chat_client (AzureOpenAI): The OpenAI client instance for generating enriched summaries and follow-up questions.
-        embedding_client (AzureOpenAI): The OpenAI client instance for generating embeddings.
-        config (ApiConfiguration): The API configuration instance.
-        questions (List[str]): The list of test questions to be processed.
-        processed_question_chunks (List[Dict[str, Any]]): The list of pre-processed question chunks.
-        logger (logging.Logger): The logger instance.
-        llm_choice (str): The choice of LLM for evaluation ('1' for GPT-4o, '2' for Gemini-1.5-pro).
-
-    Returns:
-        List[TestResult]: A list of test results, each containing the original question, its enriched version, its relevance to the pre-processed chunks, the follow-up question, and whether the follow-up question is on-topic.
-    """
-    # Initialize an empty list to store the results of each processed question.
     question_results: List[TestResult] = []
     
-    # Loop through each question in the provided list of questions.
     for question in questions:
-        # Create a new TestResult object for the current question to store its results.
         question_result = TestResult()
-        question_result.question = question     # Store the original question
+        question_result.question = question
 
-        question_result.enriched_question_summary = generate_enriched_question(chat_client, config, question, logger)  # Generate enriched question summary
+        question_result.enriched_question_summary = generate_enriched_question(chat_client, config, question, logger)
         
-        # Obtain the text embedding for the enriched question using OpenAI's embedding model.
-        embedding = get_text_embedding(embedding_client, config, question_result.enriched_question_summary, logger)  # Get embedding for the enriched question
+        embedding = get_text_embedding(embedding_client, config, question_result.enriched_question_summary, logger)
 
-        # Initialize variables to track the highest similarity score and the corresponding summary.
-        best_hit_relevance = 0      # To track the highest similarity score
-        best_hit_summary = None     # To track the summary corresponding to the highest similarity
+        best_hit_relevance = 0
+        best_hit_summary = None
 
-        # Iterate through the processed chunks to find the best hit
         for chunk in processed_question_chunks:
-            # Ensure the chunk is valid and is a dictionary.
             if chunk and isinstance(chunk, dict):
                 gpt4_embedding = chunk.get("embedding")
                 similarity = cosine_similarity(gpt4_embedding, embedding)
 
-                # If similarity exceeds the defined threshold, mark the question as a hit
                 if similarity > SIMILARITY_THRESHOLD:
                     question_result.hit = True
 
-                # Check if this is the best match so far
                 if similarity > best_hit_relevance:
                     best_hit_relevance = similarity
                     best_hit_summary = chunk.get("summary")
         
-        # Store the highest relevance score and the associated summary in the result.
         question_result.hit_relevance = best_hit_relevance
         question_result.hit_summary = best_hit_summary
 
-        # If a relevant summary (best hit) exists, generate a follow-up question and assess its topic relevance.
         if question_result.hit_summary:
-            # Generate a follow-up question based on the best hit summary.  
             question_result.follow_up = generate_follow_up_question(chat_client, config, question_result.hit_summary, logger)
-
-            # Check if the follow-up question is relevant to AI and mark it accordingly.  
-            question_result.follow_up_on_topic = assess_follow_up_on_topic(chat_client, config, question_result.follow_up, logger)  
+            question_result.follow_up_on_topic = assess_follow_up_on_topic(chat_client, config, question_result.follow_up, logger)
         
-        # Evaluate the enriched summary using the selected LLM
         if llm_choice == '1':
-            # Use GPT-4o for evaluation
-            question_result.gemini_evaluation = gemini_evaluator.evaluate(
-                question_result.question,                   # This is the original question
-                question_result.enriched_question_summary   # This is the summary generated by Azure OpenAI
+            question_result.gpt4o_evaluator = GPT4oEvaluator.evaluate(
+                question_result.question,
+                question_result.enriched_question_summary
             )
         elif llm_choice == '2':
-            # Use Gemini-1.5-pro for evaluation
             question_result.gemini_evaluation = gemini_evaluator.evaluate(
-                question_result.question,                   # This is the original question
-                question_result.enriched_question_summary   # This is the summary generated by Azure OpenAI
+                question_result.question,
+                question_result.enriched_question_summary
             )
 
-        # Append the result for the current question to the results list.
         question_results.append(question_result)
 
-    # Log the total number of processed questions for debugging or tracking purposes.
     logger.debug("Total tests processed: %s", len(question_results))
 
-    # Return the list of all test results.
     return question_results
 
 # Function to read processed chunks from the source directory
@@ -437,7 +406,8 @@ def save_results(test_destination_dir: str, question_results: List[TestResult], 
             "hitRelevance": result.hit_relevance,                       # Relevance score for the best hit.
             "follow_up": result.follow_up,                              # Follow-up question generated.
             "follow_up_on_topic": result.follow_up_on_topic,            # Whether the follow-up is on-topic.
-            "gemini_evaluation": result.gemini_evaluation               # Evaluation result from Gemini.
+            "gemini_evaluation": result.gemini_evaluation,               # Evaluation result from Gemini.
+            "gpt4o_evaluation": result.gpt4o_evaluation                # Evaluation result from GPT-4o
         }
         for result in question_results                                  # Iterate over each TestResult and serialize it.
     ]
