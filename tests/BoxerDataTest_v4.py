@@ -1,16 +1,4 @@
 # Copyright (c) 2024 Braid Technologies Ltd
-
-"""
-Question Generation (Persona):
-Continues with `gpt-4o` for persona-based question generation.
-    
-Similarity Embedding:
-Still uses `text-embedding-ada-002` for similarity comparisons.
-    
-Evaluation LLM:
-Introduces `gemini-1.5-pro` as the evaluation LLM to assess the quality of GPT-4o outputs.
-"""
-
 # Standard Library Imports
 import logging
 import os
@@ -479,3 +467,4 @@ def run_tests(config: ApiConfiguration, test_destination_dir: str, source_dir: s
     processed_question_chunks = read_processed_chunks(source_dir)
     question_results = process_questions(client, config, questions, processed_question_chunks, logger)
     save_results(test_destination_dir, question_results, test_mode)
+    
