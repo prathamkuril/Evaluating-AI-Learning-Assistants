@@ -1,5 +1,3 @@
-# Copyright (c) 2024 Braid Technologies Ltd
-
 import logging
 import os
 import sys
@@ -14,9 +12,7 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.insert(0, parent_dir)
 
 # Import necessary modules and classes for running the tests
-# from BoxerDataTest_v2 import run_tests, call_openai_chat
-# from BoxerDataTest_v3 import run_tests, call_openai_chat
-from BoxerDataTest_v4 import run_tests, call_openai_chat
+from BoxerDataTest_v5 import run_tests, call_openai_chat, configure_openai_for_azure
 from common.ApiConfiguration import ApiConfiguration
 from PersonaStrategy import DeveloperPersonaStrategy, TesterPersonaStrategy, BusinessAnalystPersonaStrategy
 from openai import AzureOpenAI, OpenAIError, BadRequestError, APIConnectionError
@@ -42,9 +38,16 @@ def TestRunner():
     # Initialize the API configuration
     config = ApiConfiguration()
 
+    # For running chat completions tests
+    chat_client = configure_openai_for_azure(config, "chat")
+    
+    # For running embeddings tests
+    embedding_client = configure_openai_for_azure(config, "embedding")
+
     # Define the directories for test output and data sources
     test_destination_dir = "D:/Dissertation - City, Univeristy of London/Evaluating-AI-Learning-Assistants/test output"
     source_dir = "D:/Dissertation - City, Univeristy of London/Evaluating-AI-Learning-Assistants/data"
+
 
     try:
         # Ensure the test output directory exists, create if it doesn't
@@ -164,6 +167,7 @@ def TestRunner():
             'How do I determine the size of the model I need?What are the trade-offs between smaller and larger models?',
             'What caching strategies can I use to improve LLM response times?',
             'How can I track and fix inaccuracies in LLM responses?',
+            'What are the uses of LLMs in the finance industry?',
             'What are the best practices for managing API keys and authentication?'
         ]
         run_tests(config, test_destination_dir, source_dir, questions=questions)
@@ -182,7 +186,7 @@ def TestRunner():
         # Business analyst persona-based testing
         strategy = BusinessAnalystPersonaStrategy()
         run_tests(config, test_destination_dir, source_dir, persona_strategy=strategy)
-        
+
     else:
         # Handle invalid input
         print("Invalid choice. Exiting.")

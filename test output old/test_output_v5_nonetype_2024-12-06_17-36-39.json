@@ -1,0 +1,42 @@
+[
+    {
+        "question": "How are LLMs different from traditional AI models?",
+        "enriched_question": "The article explains that LLMs, or Large Language Models, are trained on vast amounts of text data, enabling them to generate human-like text. Unlike traditional AI models, which are task-specific, LLMs can perform a wide range of language tasks, including translation, summarization, and question-answering, with minimal fine-tuning.",
+        "hit": false,
+        "summary": "Large Language Models (LLMs) are revolutionizing technology, akin to the internet and smartphones, with tools like GitHub Copilot enhancing developer productivity. However, LLMs alone are unpredictable and prone to errors. Effective utilization requires an ecosystem of tools and methodologies, including prompt engineering, retrieval augmented generation, and conversational memory, to maximize their potential and economic impact.",
+        "hitRelevance": 0.666254191679804,
+        "follow_up": "What is retrieval augmented generation in AI?",
+        "follow_up_on_topic": "Yes.",
+        "gemini_evaluation": "4\n"
+    },
+    {
+        "question": "What is a Large Language Model (LLM)?",
+        "enriched_question": "A Large Language Model (LLM) is an AI trained on vast text data to understand and generate human-like text. It uses deep learning, specifically transformer architectures, to predict and generate text. Applications include chatbots, translation, and content creation. Key examples are GPT-3 and BERT.",
+        "hit": false,
+        "summary": "Large Language Models (LLMs) are revolutionizing technology, akin to the internet and smartphones, with tools like GitHub Copilot enhancing developer productivity. However, LLMs alone are unpredictable and prone to errors. Effective utilization requires an ecosystem of tools and methodologies, including prompt engineering, retrieval augmented generation, and conversational memory, to maximize their potential and economic impact.",
+        "hitRelevance": 0.6329402389660881,
+        "follow_up": "What is retrieval augmented generation in AI?",
+        "follow_up_on_topic": "Yes.",
+        "gemini_evaluation": "4\n"
+    },
+    {
+        "question": "What is natural language processing (NLP)?",
+        "enriched_question": "The article explains that Natural Language Processing (NLP) is a field of AI focused on the interaction between computers and human language. It covers key concepts like tokenization, sentiment analysis, and machine translation. The article also discusses practical applications, tools, and libraries like NLTK and spaCy for implementing NLP in Python.",
+        "hit": false,
+        "summary": "Lesson 4 of \"Practical Deep Learning for Coders\" focuses on Natural Language Processing (NLP). It emphasizes the Hugging Face ecosystem, particularly the Transformers library and its pretrained models. The lesson includes a project on classifying phrase similarities in US patents, demonstrating NLP's broad applications in marketing, logistics, and medicine.",
+        "hitRelevance": 0.49794482129069084,
+        "follow_up": "How do you fine-tune a Transformer model?",
+        "follow_up_on_topic": "Yes.",
+        "gemini_evaluation": "4\n"
+    },
+    {
+        "question": "What are the best practices for managing API keys and authentication?",
+        "enriched_question": "The article explains best practices for managing API keys and authentication, including storing keys securely using environment variables, rotating keys regularly, using least privilege principles, and monitoring usage. It also covers implementing OAuth for secure access and using API gateways for added security and rate limiting.",
+        "hit": false,
+        "summary": "Encountering rate limit errors like \"429: Too Many Requests\" when using the OpenAI API indicates exceeding the allowed request rate. Rate limits protect against abuse, ensure fair access, and manage server load. To avoid these errors, implement throttling strategies, such as those demonstrated in the provided example script. For more details, consult OpenAI's rate limit resources and consider requesting a rate limit increase if necessary.",
+        "hitRelevance": 0.4022188546790614,
+        "follow_up": "How can I request a rate limit increase?",
+        "follow_up_on_topic": "no",
+        "gemini_evaluation": "4\n"
+    }
+]
